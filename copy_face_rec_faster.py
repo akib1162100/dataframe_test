@@ -291,6 +291,7 @@ def face_recognize(url = 0):
         for (top, right, bottom, left), face_encoding in zip(face_locations, face_encodings):
             # See if the face is a match for the known face(s)
             
+            name = "Unknown"
             
             #single face
             
@@ -300,70 +301,54 @@ def face_recognize(url = 0):
                 distances.append(face_distances)    
             else:
                 testDf = pd.DataFrame(distances , columns=known_face_names)
+                testDf = testDf.loc[:, ~testDf.columns.str.contains('^Unnamed')]
                 testDf = testDf[known_face_names].mean()
+                
+                if testDf[testDf.idxmin(axis=1)]>0.65:
+                    name = testDf.idxmin(axis=1)
+
+                cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
+
+                # Draw a label with a name below the face
+                cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 0, 255), cv2.FILLED)
+                font = cv2.FONT_HERSHEY_DUPLEX
+                cv2.putText(frame, name, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
+
+                #file=random.getrandbits(32)
+                #cv2.imwrite('./images/'+str(file)+'.png',frame)
+                vid = cv2.flip(frame,1)
+                out.write(vid)
 
 
+            #old approach
+            # matches = face_recognition.compare_faces(known_face_encodings, face_encoding,tolerance = 0.50)
 
 
+            # # If a match was found in known_face_encodings, just use the first one.
+            # # if True in matches:
+            # #     first_match_index = matches.index(True)
+            # #     name = known_face_names[first_match_index]
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-            matches = face_recognition.compare_faces(known_face_encodings, face_encoding,tolerance = 0.50)
-
-            name = "Unknown"
-
-            # If a match was found in known_face_encodings, just use the first one.
-            # if True in matches:
-            #     first_match_index = matches.index(True)
-            #     name = known_face_names[first_match_index]
-
-            # Or instead, use the known face with the smallest distance to the new face
-            face_distances = face_recognition.face_distance(known_face_encodings, face_encoding)
-            distances.append(face_distances)
-            #print("face_distances "+str(face_distances))
-            print(face_distances)
-            best_match_index = np.argmin(face_distances)
-            # print("printing best_match_index")
-            # print(best_match_index)
-            # print(known_face_names)
-            # testDf = testDf.append(pd.Series(face_distances, index=known_face_names), ignore_index=True)
-            if matches[best_match_index]:
-                name = known_face_names[best_match_index]
-                # print("name")
-                # print(name)
-            # Draw a box around the face
-            cv2.rectangle(frame, (left, top), (right, bottom), (0, 0, 255), 2)
-
-            # Draw a label with a name below the face
-            cv2.rectangle(frame, (left, bottom - 35), (right, bottom), (0, 0, 255), cv2.FILLED)
-            font = cv2.FONT_HERSHEY_DUPLEX
-            cv2.putText(frame, name, (left + 6, bottom - 6), font, 1.0, (255, 255, 255), 1)
-
-            #file=random.getrandbits(32)
-            #cv2.imwrite('./images/'+str(file)+'.png',frame)
-            vid = cv2.flip(frame,1)
-            out.write(vid)
+            # # Or instead, use the known face with the smallest distance to the new face
+            # face_distances = face_recognition.face_distance(known_face_encodings, face_encoding)
+            # distances.append(face_distances)
+            # #print("face_distances "+str(face_distances))
+            # print(face_distances)
+            # best_match_index = np.argmin(face_distances)
+            # # print("printing best_match_index")
+            # # print(best_match_index)
+            # # print(known_face_names)
+            # # testDf = testDf.append(pd.Series(face_distances, index=known_face_names), ignore_index=True)
+            # if matches[best_match_index]:
+            #     name = known_face_names[best_match_index]
+            #     # print("name")
+            #     # print(name)
+            # # Draw a box around the face
             # fps.update()
         # Display the resulting image
         #ims = cv2.resize(frame,(1920,1080))
+
+
         cv2.imshow('FaceDetector', rgb_frame)
         key=cv2.waitKey(1)
     #     # Hit 'q' on the keyboard to quit!
